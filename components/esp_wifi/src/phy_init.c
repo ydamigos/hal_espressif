@@ -80,9 +80,7 @@ static bool s_mac_bb_pu = true;
 static int64_t s_phy_rf_en_ts = 0;
 #endif
 
-/* PHY spinlock for libphy.a */
-static struct k_spinlock s_phy_int_mux;
-static k_spinlock_key_t phy_int_mux_key;
+static DRAM_ATTR int s_phy_int_mux;
 
 /* Memory to store PHY digital registers */
 static uint32_t *s_phy_digital_regs_mem = NULL;
@@ -156,7 +154,7 @@ static phy_country_to_bin_type_t s_country_code_map_type_table[] = {
 #endif
 uint32_t IRAM_ATTR phy_enter_critical(void)
 {
-	phy_int_mux_key = k_spin_lock(&s_phy_int_mux);
+	s_phy_int_mux = irq_lock();
 	// Interrupt level will be stored in current tcb, so always return zero.
 	return 0;
 }
@@ -164,7 +162,7 @@ uint32_t IRAM_ATTR phy_enter_critical(void)
 void IRAM_ATTR phy_exit_critical(uint32_t level)
 {
 	// Param level don't need any more, ignore it.
-	k_spin_unlock(&s_phy_int_mux, phy_int_mux_key);
+	irq_unlock(s_phy_int_mux);
 }
 
 #if CONFIG_IDF_TARGET_ESP32
